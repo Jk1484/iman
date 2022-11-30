@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package crawler_service;
+option go_package = "./crawler_service";
+
+message Message {
+    string body = 1;
+}
+
+service CrawlerService {
+    rpc Crawl(CrawlRequest) returns (CrawlResponse) {}
+}
+
+message CrawlRequest {
+    int32 page = 1;
+}
+
+message CrawlResponse {
+    repeated Data data = 1;
+}
+
+message Data {
+    int32 id = 1;
+    int32 user_id = 2;
+    string title = 3;
+    string body = 4;
+}

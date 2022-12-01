@@ -16,13 +16,13 @@ import (
 func main() {
 	cfg := configs.New()
 
-	lis, err := net.Listen("tcp", cfg.PostService.Port)
+	lis, err := net.Listen("tcp", cfg.Peek().PostService.Port)
 	if err != nil {
-		log.Fatalf("Failed to listen on port %v: %v", err, cfg.PostService.Port)
+		log.Fatalf("Failed to listen on port %v: %v", err, cfg.Peek().PostService.Port)
 	}
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name)
+		cfg.Peek().Database.Host, cfg.Peek().Database.Port, cfg.Peek().Database.User, cfg.Peek().Database.Password, cfg.Peek().Database.Name)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
@@ -41,6 +41,6 @@ func main() {
 	pb.RegisterPostServiceServer(grpcServer, s)
 
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve gRPC server over port %v: %v", err, cfg.PostService.Port)
+		log.Fatalf("Failed to serve gRPC server over port %v: %v", err, cfg.Peek().PostService.Port)
 	}
 }

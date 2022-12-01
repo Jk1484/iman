@@ -20,7 +20,7 @@ func main() {
 	cfg := configs.New()
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name)
+		cfg.Peek().Database.Host, cfg.Peek().Database.Port, cfg.Peek().Database.User, cfg.Peek().Database.Password, cfg.Peek().Database.Name)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
@@ -40,13 +40,13 @@ func main() {
 
 	go Jobs(c)
 
-	lis, err := net.Listen("tcp", cfg.CrawlerService.Port)
+	lis, err := net.Listen("tcp", cfg.Peek().CrawlerService.Port)
 	if err != nil {
-		log.Fatalf("Failed to listen on port %v: %v", err, cfg.CrawlerService.Port)
+		log.Fatalf("Failed to listen on port %v: %v", err, cfg.Peek().CrawlerService.Port)
 	}
 
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve gRPC server over port %v: %v", err, cfg.CrawlerService.Port)
+		log.Fatalf("Failed to serve gRPC server over port %v: %v", err, cfg.Peek().CrawlerService.Port)
 	}
 }
 

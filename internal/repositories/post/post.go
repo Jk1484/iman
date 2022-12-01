@@ -14,6 +14,7 @@ func (p *Repository) GetPosts(ctx context.Context, limit, offset int) (posts []*
 	query := `
 		SELECT id, user_id, title, body
 		FROM posts
+		ORDER BY id DESC
 		LIMIT $1 OFFSET $2
 	`
 

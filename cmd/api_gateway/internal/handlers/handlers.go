@@ -12,17 +12,28 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type Handlers struct {
+type Handlers interface {
+	GetPosts(c *gin.Context)
+	GetPostByID(c *gin.Context)
+	DeletePostByID(c *gin.Context)
+	UpdatePostByID(c *gin.Context)
+}
+
+type handlers struct {
 	PostServiceClient post_service.PostServiceClient
 }
 
-func NewHandler(conn *grpc.ClientConn) *Handlers {
-	return &Handlers{
-		PostServiceClient: post_service.NewPostServiceClient(conn),
+type Params struct {
+	PostServiceClientConnection *grpc.ClientConn
+}
+
+func New(p Params) Handlers {
+	return &handlers{
+		PostServiceClient: post_service.NewPostServiceClient(p.PostServiceClientConnection),
 	}
 }
 
-func (h *Handlers) GetPosts(c *gin.Context) {
+func (h *handlers) GetPosts(c *gin.Context) {
 	resp := &api.Response{}
 	defer c.JSON(resp.Code, resp)
 
@@ -61,7 +72,7 @@ func (h *Handlers) GetPosts(c *gin.Context) {
 	resp.Ok(data)
 }
 
-func (h *Handlers) GetPostByID(c *gin.Context) {
+func (h *handlers) GetPostByID(c *gin.Context) {
 	resp := &api.Response{}
 	defer c.JSON(resp.Code, resp)
 
@@ -93,7 +104,7 @@ func (h *Handlers) GetPostByID(c *gin.Context) {
 	resp.Ok(post)
 }
 
-func (h *Handlers) DeletePostByID(c *gin.Context) {
+func (h *handlers) DeletePostByID(c *gin.Context) {
 	resp := &api.Response{}
 	defer c.JSON(resp.Code, resp)
 
@@ -125,7 +136,7 @@ func (h *Handlers) DeletePostByID(c *gin.Context) {
 	resp.Ok("post deleted")
 }
 
-func (h *Handlers) UpdatePostByID(c *gin.Context) {
+func (h *handlers) UpdatePostByID(c *gin.Context) {
 	resp := &api.Response{}
 	defer c.JSON(resp.Code, resp)
 

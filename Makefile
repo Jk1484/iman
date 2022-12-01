@@ -1,6 +1,10 @@
 proto:
 	./scripts/gen_proto.sh
-run:
+up:
 	docker compose up --build -d
 stop:
+	docker compose stop
+start:
+	docker compose start
+down:
 	docker compose down

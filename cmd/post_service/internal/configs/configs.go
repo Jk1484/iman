@@ -6,8 +6,8 @@ import (
 	"runtime"
 )
 
-func init() {
-
+type Configs interface {
+	Peek() *configs
 }
 
 const configFileName = "configs.json"
@@ -21,8 +21,8 @@ var ConfigPath = func() string {
 	return filepath.Dir(p) + "/" + configFileName
 }()
 
-func New() *Configs {
-	cfg := &Configs{}
+func New() Configs {
+	cfg := &configs{}
 	err := configer.LoadConfig(ConfigPath, cfg)
 	if err != nil {
 		panic(err)
@@ -31,7 +31,11 @@ func New() *Configs {
 	return cfg
 }
 
-type Configs struct {
+func (c *configs) Peek() *configs {
+	return c
+}
+
+type configs struct {
 	Database    Database    `json:"database"`
 	PostService PostService `json:"postService"`
 }

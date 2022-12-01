@@ -1,14 +1,25 @@
-## Command to run
+## Container manipulation
+Build and run containers
 ```
-make run
+make up
 ```
 
-## Command to stop
+Stop containers
 ```
 make stop
 ```
 
-## Command to update generated proto files
+Start containers
+```
+make start
+```
+
+Stop and delete containers
+```
+make down
+```
+
+## Update generated proto files
 ```
 make proto
 ```

@@ -6,6 +6,8 @@ import (
 	"iman/internal/repositories/post"
 	"iman/pkg/proto/post_service"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -28,6 +30,10 @@ func New(db *sql.DB) *Service {
 func (s *Service) GetPosts(ctx context.Context, in *post_service.GetPostsRequest) (*post_service.GetPostsResponse, error) {
 	p, err := s.PostsRepository.GetPosts(ctx, int(in.Limit), int(in.Page-1)*int(in.Limit))
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Error(codes.NotFound, "not found")
+		}
+
 		return nil, err
 	}
 
@@ -39,6 +45,12 @@ func (s *Service) GetPosts(ctx context.Context, in *post_service.GetPostsRequest
 func (s *Service) GetPostByID(ctx context.Context, in *post_service.GetPostByIDRequest) (*post_service.GetPostByIDResponse, error) {
 	p, err := s.PostsRepository.GetPostByID(ctx, int(in.Id))
 	if err != nil {
+		if err == sql.ErrNoRows {
+			if err == sql.ErrNoRows {
+				return nil, status.Error(codes.NotFound, "not found")
+			}
+		}
+
 		return nil, err
 	}
 
@@ -50,6 +62,10 @@ func (s *Service) GetPostByID(ctx context.Context, in *post_service.GetPostByIDR
 func (s *Service) DeletePostByID(ctx context.Context, in *post_service.DeletePostByIDRequest) (*emptypb.Empty, error) {
 	err := s.PostsRepository.DeletePostByID(ctx, int(in.Id))
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Error(codes.NotFound, "not found")
+		}
+
 		return nil, err
 	}
 
@@ -59,6 +75,10 @@ func (s *Service) DeletePostByID(ctx context.Context, in *post_service.DeletePos
 func (s *Service) UpdatePostByID(ctx context.Context, in *post_service.UpdatePostByIDRequest) (*emptypb.Empty, error) {
 	err := s.PostsRepository.UpdatePostByID(ctx, int(in.Post.Id), in.Post.Title, in.Post.Body)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Error(codes.NotFound, "not found")
+		}
+
 		return nil, err
 	}
 

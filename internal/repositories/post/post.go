@@ -59,9 +59,18 @@ func (p *Repository) DeletePostByID(ctx context.Context, id int) (err error) {
 		WHERE id = $1
 	`
 
-	_, err = p.DB.Exec(query, id)
+	res, err := p.DB.Exec(query, id)
 	if err != nil {
 		return
+	}
+
+	cnt, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if cnt == 0 {
+		return sql.ErrNoRows
 	}
 
 	return
@@ -74,9 +83,18 @@ func (p *Repository) UpdatePostByID(ctx context.Context, id int, title, body str
 		WHERE id = $3
 	`
 
-	_, err = p.DB.Exec(query, title, body, id)
+	res, err := p.DB.Exec(query, title, body, id)
 	if err != nil {
-		return
+		return err
+	}
+
+	cnt, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if cnt == 0 {
+		return sql.ErrNoRows
 	}
 
 	return

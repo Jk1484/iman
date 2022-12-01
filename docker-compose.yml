@@ -21,8 +21,6 @@ services:
     build:
       context: .
       dockerfile: cmd/crawler_service/Dockerfile
-    ports:
-      - "9000:9000"
     networks:
       - backend
     depends_on:
@@ -34,8 +32,6 @@ services:
     build:
       context: .
       dockerfile: cmd/post_service/Dockerfile
-    ports:
-      - "9001:9001"
     networks:
       - backend
     depends_on:

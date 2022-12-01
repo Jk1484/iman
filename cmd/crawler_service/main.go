@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"iman/cmd/crawler_service/internal/configs"
 	"iman/internal/services/crawler"
 	"iman/pkg/proto/crawler_service"
 	"log"
@@ -15,13 +16,12 @@ import (
 )
 
 func main() {
-	lis, err := net.Listen("tcp", ":9000")
-	if err != nil {
-		log.Fatalf("Failed to listen on port 9000: %v", err)
-	}
+	cfg := configs.New()
+
+	fmt.Println(cfg)
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		"database", "5432", "postgres", "postgres", "iman")
+		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
@@ -41,10 +41,15 @@ func main() {
 
 	err = c.PopulateData(context.Background())
 	if err != nil {
-		fmt.Println("error populating data:", err)
+		log.Fatalln("error populating data:", err)
+	}
+
+	lis, err := net.Listen("tcp", cfg.CrawlerService.Port)
+	if err != nil {
+		log.Fatalf("Failed to listen on port %v: %v", err, cfg.CrawlerService.Port)
 	}
 
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve gRPC server over port 9000: %v", err)
+		log.Fatalf("Failed to serve gRPC server over port %v: %v", err, cfg.CrawlerService.Port)
 	}
 }

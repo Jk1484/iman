@@ -1,0 +1,13 @@
+{
+    "database": {
+        "host": "database",
+        "port": "5432",
+        "user": "postgres",
+        "password": "postgres",
+        "name": "iman"
+    },
+    "crawlerService": {
+        "host": "crawler_service",
+        "port": ":9000"
+    }
+}

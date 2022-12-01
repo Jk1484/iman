@@ -1,0 +1,9 @@
+{
+    "server": {
+        "port": ":8080"
+    },
+    "postService": {
+        "host": "post_service",
+        "port": ":9001"
+    }
+}

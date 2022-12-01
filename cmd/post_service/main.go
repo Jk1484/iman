@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"iman/cmd/post_service/internal/configs"
 	"iman/internal/services/post"
 	pb "iman/pkg/proto/post_service"
 	"log"
@@ -13,13 +14,15 @@ import (
 )
 
 func main() {
-	lis, err := net.Listen("tcp", ":9001")
+	cfg := configs.New()
+
+	lis, err := net.Listen("tcp", cfg.PostService.Port)
 	if err != nil {
-		log.Fatalf("Failed to listen on port 9001: %v", err)
+		log.Fatalf("Failed to listen on port %v: %v", err, cfg.PostService.Port)
 	}
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		"database", "5432", "postgres", "postgres", "iman")
+		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
@@ -38,6 +41,6 @@ func main() {
 	pb.RegisterPostServiceServer(grpcServer, s)
 
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve gRPC server over port 9001: %v", err)
+		log.Fatalf("Failed to serve gRPC server over port %v: %v", err, cfg.PostService.Port)
 	}
 }

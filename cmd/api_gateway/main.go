@@ -1,6 +1,7 @@
 package main
 
 import (
+	"iman/cmd/api_gateway/internal/configs"
 	"iman/cmd/api_gateway/internal/handlers"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,9 @@ func main() {
 
 	r.Use(gin.Logger(), gin.Recovery())
 
-	conn := postServiceConnection()
+	cfg := configs.New()
+
+	conn := postServiceConnection(cfg)
 	defer conn.Close()
 
 	h := handlers.NewHandler(conn)
@@ -22,11 +25,11 @@ func main() {
 	r.DELETE("/post", h.DeletePostByID)
 	r.PUT("/post", h.UpdatePostByID)
 
-	r.Run(":8080")
+	r.Run(cfg.Server.Port)
 }
 
-func postServiceConnection() *grpc.ClientConn {
-	conn, err := grpc.Dial("post_service:9001", grpc.WithInsecure())
+func postServiceConnection(cfg *configs.Configs) *grpc.ClientConn {
+	conn, err := grpc.Dial(cfg.PostService.Host+cfg.PostService.Port, grpc.WithInsecure())
 	if err != nil {
 		panic(err)
 	}

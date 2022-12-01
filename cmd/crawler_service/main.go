@@ -9,6 +9,7 @@ import (
 	"iman/pkg/proto/crawler_service"
 	"log"
 	"net"
+	"time"
 
 	_ "github.com/lib/pq"
 
@@ -17,8 +18,6 @@ import (
 
 func main() {
 	cfg := configs.New()
-
-	fmt.Println(cfg)
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.Name)
@@ -39,10 +38,7 @@ func main() {
 
 	crawler_service.RegisterCrawlerServiceServer(grpcServer, c)
 
-	err = c.PopulateData(context.Background())
-	if err != nil {
-		log.Fatalln("error populating data:", err)
-	}
+	go Jobs(c)
 
 	lis, err := net.Listen("tcp", cfg.CrawlerService.Port)
 	if err != nil {
@@ -51,5 +47,15 @@ func main() {
 
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve gRPC server over port %v: %v", err, cfg.CrawlerService.Port)
+	}
+}
+
+func Jobs(c *crawler.Crawler) {
+	for {
+		err := c.PopulateData(context.Background())
+		if err != nil {
+			log.Println("error populating data:", err)
+		}
+		time.Sleep(time.Minute)
 	}
 }

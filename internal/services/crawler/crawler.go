@@ -77,29 +77,28 @@ func (c *Crawler) PopulateData(ctx context.Context) (err error) {
 	}
 
 	want := 50 - cnt
-	pages := want / 10
-	if want%10 > 0 {
-		pages++
-	}
 
-	var data []*crawler_service.Data
-
-	for i := 1; i <= pages; i++ {
-		d, err := c.Crawl(ctx, &crawler_service.CrawlRequest{Page: int32(i)})
+	inserted := 0
+	page := 1
+	for inserted < want {
+		d, err := c.Crawl(ctx, &crawler_service.CrawlRequest{Page: int32(page)})
 		if err != nil {
 			return err
 		}
 
-		data = append(data, d.Data...)
-	}
+		for _, v := range d.Data {
+			err := c.PostRepository.CreatePost(ctx, &post_service.Post{Id: v.Id, UserId: v.UserId, Title: v.Title, Body: v.Body})
+			if err != nil {
+				continue
+			}
+			inserted++
 
-	data = data[:want]
-
-	for _, v := range data {
-		err = c.PostRepository.CreatePost(ctx, &post_service.Post{Id: v.Id, UserId: v.UserId, Title: v.Title, Body: v.Body})
-		if err != nil {
-			return
+			if inserted == want {
+				break
+			}
 		}
+
+		page++
 	}
 
 	return

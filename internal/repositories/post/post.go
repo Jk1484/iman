@@ -6,11 +6,30 @@ import (
 	"iman/pkg/proto/post_service"
 )
 
-type Repository struct {
+type Repository interface {
+	GetPosts(ctx context.Context, limit, offset int) (posts []*post_service.Post, err error)
+	GetPostByID(ctx context.Context, id int) (*post_service.Post, error)
+	DeletePostByID(ctx context.Context, id int) (err error)
+	UpdatePostByID(ctx context.Context, id int, title, body string) (err error)
+	GetPostsCount(ctx context.Context) (cnt int, err error)
+	CreatePost(ctx context.Context, post *post_service.Post) (err error)
+}
+
+type repository struct {
 	DB *sql.DB
 }
 
-func (p *Repository) GetPosts(ctx context.Context, limit, offset int) (posts []*post_service.Post, err error) {
+type Params struct {
+	DB *sql.DB
+}
+
+func New(p Params) Repository {
+	return &repository{
+		DB: p.DB,
+	}
+}
+
+func (r *repository) GetPosts(ctx context.Context, limit, offset int) (posts []*post_service.Post, err error) {
 	query := `
 		SELECT id, user_id, title, body
 		FROM posts
@@ -18,7 +37,7 @@ func (p *Repository) GetPosts(ctx context.Context, limit, offset int) (posts []*
 		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := p.DB.Query(query, limit, offset)
+	rows, err := r.DB.Query(query, limit, offset)
 	if err != nil {
 		return
 	}
@@ -37,7 +56,7 @@ func (p *Repository) GetPosts(ctx context.Context, limit, offset int) (posts []*
 	return
 }
 
-func (p *Repository) GetPostByID(ctx context.Context, id int) (*post_service.Post, error) {
+func (r *repository) GetPostByID(ctx context.Context, id int) (*post_service.Post, error) {
 	query := `
 		SELECT id, user_id, title, body
 		FROM posts
@@ -46,7 +65,7 @@ func (p *Repository) GetPostByID(ctx context.Context, id int) (*post_service.Pos
 
 	var post post_service.Post
 
-	err := p.DB.QueryRow(query, id).Scan(&post.Id, &post.UserId, &post.Title, &post.Body)
+	err := r.DB.QueryRow(query, id).Scan(&post.Id, &post.UserId, &post.Title, &post.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +73,13 @@ func (p *Repository) GetPostByID(ctx context.Context, id int) (*post_service.Pos
 	return &post, nil
 }
 
-func (p *Repository) DeletePostByID(ctx context.Context, id int) (err error) {
+func (r *repository) DeletePostByID(ctx context.Context, id int) (err error) {
 	query := `
 		DELETE FROM posts
 		WHERE id = $1
 	`
 
-	res, err := p.DB.Exec(query, id)
+	res, err := r.DB.Exec(query, id)
 	if err != nil {
 		return
 	}
@@ -77,14 +96,14 @@ func (p *Repository) DeletePostByID(ctx context.Context, id int) (err error) {
 	return
 }
 
-func (p *Repository) UpdatePostByID(ctx context.Context, id int, title, body string) (err error) {
+func (r *repository) UpdatePostByID(ctx context.Context, id int, title, body string) (err error) {
 	query := `
 		UPDATE posts
 		SET title = $1, body = $2
 		WHERE id = $3
 	`
 
-	res, err := p.DB.Exec(query, title, body, id)
+	res, err := r.DB.Exec(query, title, body, id)
 	if err != nil {
 		return err
 	}
@@ -101,13 +120,13 @@ func (p *Repository) UpdatePostByID(ctx context.Context, id int, title, body str
 	return
 }
 
-func (p *Repository) GetPostsCount(ctx context.Context) (cnt int, err error) {
+func (r *repository) GetPostsCount(ctx context.Context) (cnt int, err error) {
 	query := `
 		SELECT count(*)
 		FROM posts
 	`
 
-	err = p.DB.QueryRow(query).Scan(&cnt)
+	err = r.DB.QueryRow(query).Scan(&cnt)
 	if err != nil {
 		return
 	}
@@ -115,13 +134,13 @@ func (p *Repository) GetPostsCount(ctx context.Context) (cnt int, err error) {
 	return
 }
 
-func (p *Repository) CreatePost(ctx context.Context, post *post_service.Post) (err error) {
+func (r *repository) CreatePost(ctx context.Context, post *post_service.Post) (err error) {
 	query := `
 		INSERT INTO posts(id, user_id, title, body)
 		VALUES($1, $2, $3, $4)
 	`
 
-	_, err = p.DB.Exec(query, post.Id, post.UserId, post.Title, post.Body)
+	_, err = r.DB.Exec(query, post.Id, post.UserId, post.Title, post.Body)
 	if err != nil {
 		return
 	}

@@ -13,21 +13,29 @@ import (
 	"strconv"
 )
 
-type Crawler struct {
-	crawler_service.UnimplementedCrawlerServiceServer
-	PostRepository post.Repository
+type Service interface {
+	Crawl(ctx context.Context, in *crawler_service.CrawlRequest) (*crawler_service.CrawlResponse, error)
+	PopulateData(ctx context.Context) (err error)
+	crawler_service.UnsafeCrawlerServiceServer
 }
 
-func New(conn *sql.DB) *Crawler {
-	return &Crawler{
-		PostRepository: post.Repository{
-			DB: conn,
-		},
+type service struct {
+	PostRepository post.Repository
+	crawler_service.UnimplementedCrawlerServiceServer
+}
+
+type Params struct {
+	DB *sql.DB
+}
+
+func New(p Params) Service {
+	return &service{
+		PostRepository: post.New(post.Params{DB: p.DB}),
 	}
 }
 
 // Crawl returns 10 posts from the page you specify in page field
-func (c *Crawler) Crawl(ctx context.Context, in *crawler_service.CrawlRequest) (*crawler_service.CrawlResponse, error) {
+func (s *service) Crawl(ctx context.Context, in *crawler_service.CrawlRequest) (*crawler_service.CrawlResponse, error) {
 	u, err := url.Parse("https://gorest.co.in/public/v1/posts")
 	if err != nil {
 		return nil, err
@@ -66,8 +74,8 @@ func (c *Crawler) Crawl(ctx context.Context, in *crawler_service.CrawlRequest) (
 	}, nil
 }
 
-func (c *Crawler) PopulateData(ctx context.Context) (err error) {
-	cnt, err := c.PostRepository.GetPostsCount(ctx)
+func (s *service) PopulateData(ctx context.Context) (err error) {
+	cnt, err := s.PostRepository.GetPostsCount(ctx)
 	if err != nil {
 		return
 	}
@@ -81,13 +89,13 @@ func (c *Crawler) PopulateData(ctx context.Context) (err error) {
 	inserted := 0
 	page := 1
 	for inserted < want {
-		d, err := c.Crawl(ctx, &crawler_service.CrawlRequest{Page: int32(page)})
+		d, err := s.Crawl(ctx, &crawler_service.CrawlRequest{Page: int32(page)})
 		if err != nil {
 			return err
 		}
 
 		for _, v := range d.Data {
-			err := c.PostRepository.CreatePost(ctx, &post_service.Post{Id: v.Id, UserId: v.UserId, Title: v.Title, Body: v.Body})
+			err := s.PostRepository.CreatePost(ctx, &post_service.Post{Id: v.Id, UserId: v.UserId, Title: v.Title, Body: v.Body})
 			if err != nil {
 				continue
 			}

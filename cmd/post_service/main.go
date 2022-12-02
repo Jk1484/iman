@@ -34,7 +34,7 @@ func main() {
 		panic(err)
 	}
 
-	s := post.New(db)
+	s := post.New(post.Params{DB: db})
 
 	grpcServer := grpc.NewServer()
 

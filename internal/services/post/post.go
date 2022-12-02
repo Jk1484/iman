@@ -12,22 +12,32 @@ import (
 )
 
 // compile time check
-var _ = (post_service.PostServiceServer)(&Service{})
+var _ = (post_service.PostServiceServer)(&service{})
 
-type Service struct {
-	post_service.UnimplementedPostServiceServer
-	PostsRepository post.Repository
+type Service interface {
+	GetPosts(ctx context.Context, in *post_service.GetPostsRequest) (*post_service.GetPostsResponse, error)
+	GetPostByID(ctx context.Context, in *post_service.GetPostByIDRequest) (*post_service.GetPostByIDResponse, error)
+	DeletePostByID(ctx context.Context, in *post_service.DeletePostByIDRequest) (*emptypb.Empty, error)
+	UpdatePostByID(ctx context.Context, in *post_service.UpdatePostByIDRequest) (*emptypb.Empty, error)
+	post_service.UnsafePostServiceServer
 }
 
-func New(db *sql.DB) *Service {
-	return &Service{
-		PostsRepository: post.Repository{
-			DB: db,
-		},
+type service struct {
+	PostsRepository post.Repository
+	post_service.UnimplementedPostServiceServer
+}
+
+type Params struct {
+	DB *sql.DB
+}
+
+func New(p Params) Service {
+	return &service{
+		PostsRepository: post.New(post.Params{DB: p.DB}),
 	}
 }
 
-func (s *Service) GetPosts(ctx context.Context, in *post_service.GetPostsRequest) (*post_service.GetPostsResponse, error) {
+func (s *service) GetPosts(ctx context.Context, in *post_service.GetPostsRequest) (*post_service.GetPostsResponse, error) {
 	p, err := s.PostsRepository.GetPosts(ctx, int(in.Limit), int(in.Page-1)*int(in.Limit))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -42,7 +52,7 @@ func (s *Service) GetPosts(ctx context.Context, in *post_service.GetPostsRequest
 	}, nil
 }
 
-func (s *Service) GetPostByID(ctx context.Context, in *post_service.GetPostByIDRequest) (*post_service.GetPostByIDResponse, error) {
+func (s *service) GetPostByID(ctx context.Context, in *post_service.GetPostByIDRequest) (*post_service.GetPostByIDResponse, error) {
 	p, err := s.PostsRepository.GetPostByID(ctx, int(in.Id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -59,7 +69,7 @@ func (s *Service) GetPostByID(ctx context.Context, in *post_service.GetPostByIDR
 	}, nil
 }
 
-func (s *Service) DeletePostByID(ctx context.Context, in *post_service.DeletePostByIDRequest) (*emptypb.Empty, error) {
+func (s *service) DeletePostByID(ctx context.Context, in *post_service.DeletePostByIDRequest) (*emptypb.Empty, error) {
 	err := s.PostsRepository.DeletePostByID(ctx, int(in.Id))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -72,7 +82,7 @@ func (s *Service) DeletePostByID(ctx context.Context, in *post_service.DeletePos
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Service) UpdatePostByID(ctx context.Context, in *post_service.UpdatePostByIDRequest) (*emptypb.Empty, error) {
+func (s *service) UpdatePostByID(ctx context.Context, in *post_service.UpdatePostByIDRequest) (*emptypb.Empty, error) {
 	err := s.PostsRepository.UpdatePostByID(ctx, int(in.Post.Id), in.Post.Title, in.Post.Body)
 	if err != nil {
 		if err == sql.ErrNoRows {

@@ -32,7 +32,7 @@ func main() {
 		panic(err)
 	}
 
-	c := crawler.New(db)
+	c := crawler.New(crawler.Params{DB: db})
 
 	grpcServer := grpc.NewServer()
 
@@ -50,7 +50,7 @@ func main() {
 	}
 }
 
-func Jobs(c *crawler.Crawler) {
+func Jobs(c crawler.Service) {
 	for {
 		err := c.PopulateData(context.Background())
 		if err != nil {
